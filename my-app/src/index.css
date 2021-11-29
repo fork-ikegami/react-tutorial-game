@@ -7,6 +7,14 @@ ol, ul {
   padding-left: 30px;
 }
 
+button {
+  font: 14px "Century Gothic", Futura, sans-serif;
+  font-weight: inherit;
+  cursor: pointer;
+  border: none;
+  background-color: transparent;
+}
+
 .board-row:after {
   clear: both;
   content: "";
@@ -47,4 +55,21 @@ ol, ul {
 
 .game-info {
   margin-left: 20px;
+}
+
+.list-moves li + li {
+  margin-top: 5px;
+}
+
+.list-moves .is-current {
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.fa-clock {
+  padding-left: .5em;
+}
+
+.fa-clock path {
+  fill: #0089A7;
 }

@@ -1,9 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faClock } from '@fortawesome/free-solid-svg-icons'
 import './index.css';
 
 // 次はこちら
 // https://ja.reactjs.org/tutorial/tutorial.html#completing-the-game
+// 着手履歴のリストを昇順・降順いずれでも並べかえられるよう、トグルボタンを追加する。
 
 // 関数コンポーネント
 function Square(props) {
@@ -19,6 +22,7 @@ class Board extends React.Component {
   renderSquare(i) {
     return (
       <Square 
+        key={i}
         value={this.props.squares[i]}
         // SquareにonClickを渡す
         onClick={() => this.props.onClick(i)}
@@ -27,24 +31,20 @@ class Board extends React.Component {
   }
 
   render() {
+    // ボード描画
+    const board = [0, 3, 6].map((n, index) => {
+      let square = [];
+      for (let i = 0; i < 3; i++) {
+        square.push(this.renderSquare(i + n));
+      }
+      return (
+        <div key={index} className="board-row">
+          {square}
+        </div>
+      )
+    })
     return (
-      <div>
-        <div className="board-row">
-          {this.renderSquare(0)}
-          {this.renderSquare(1)}
-          {this.renderSquare(2)}
-        </div>
-        <div className="board-row">
-          {this.renderSquare(3)}
-          {this.renderSquare(4)}
-          {this.renderSquare(5)}
-        </div>
-        <div className="board-row">
-          {this.renderSquare(6)}
-          {this.renderSquare(7)}
-          {this.renderSquare(8)}
-        </div>
-      </div>
+      <div>{board}</div>
     );
   }
 }
@@ -95,9 +95,27 @@ class Game extends React.Component {
       const desc = move ?
         'Go to move #' + move :
         'Go to game start';
+
+      // 履歴でどのマスに置いたか表示
+      let position = null;
+      if (move > 0) {
+        step.squares.forEach(function(value, index) {
+          if (value !== history[move-1].squares[index]) {
+            position = `[${index}]`;
+            return;
+          }
+        })
+      }
+
+      // 現在のステップかどうか
+      const currentStep = move === this.state.stepNumber ?
+        'is-current' :
+        null;
+
       return (
-        <li key={move}>
-          <button onClick={() => this.jumpTo(move)}>{desc}</button>
+        <li key={move} className={currentStep}>
+          <button onClick={() => this.jumpTo(move)}>{desc}<FontAwesomeIcon icon={faClock} /></button>
+          <span className="position">{position}</span>
         </li>
       );
     });
@@ -119,7 +137,7 @@ class Game extends React.Component {
         </div>
         <div className="game-info">
           <div>{status}</div>
-          <ol>{moves}</ol>
+          <ol className="list-moves">{moves}</ol>
         </div>
       </div>
     );
