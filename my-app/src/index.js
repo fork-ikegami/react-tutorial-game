@@ -6,13 +6,13 @@ import './index.css';
 
 // 次はこちら
 // https://ja.reactjs.org/tutorial/tutorial.html#completing-the-game
-// 着手履歴のリストを昇順・降順いずれでも並べかえられるよう、トグルボタンを追加する。
+// jumpToでステップ移動したあと、情報が更新されるタイミングが遅いので見直す
 
 // 関数コンポーネント
 function Square(props) {
   return (
     // ボタンをクリックされたらBoardから渡されたonClickプロパティを呼ぶ
-    <button className="square" onClick={props.onClick}>
+    <button className={`${props.class} square`} onClick={props.onClick}>
       {props.value}
     </button>
   );
@@ -20,12 +20,21 @@ function Square(props) {
 
 class Board extends React.Component {
   renderSquare(i) {
+    let isWinnerSquare = null;
+    if (this.props.winnerPosition !== null) {
+      this.props.winnerPosition.forEach((e) => {
+        if (e === i) {
+          isWinnerSquare = 'is-winner';
+        }
+      });
+    }
     return (
       <Square 
         key={i}
         value={this.props.squares[i]}
         // SquareにonClickを渡す
         onClick={() => this.props.onClick(i)}
+        class={isWinnerSquare}
       />
     );
   }
@@ -58,6 +67,9 @@ class Game extends React.Component {
       }],
       stepNumber: 0, //いま何手目か
       xIsNext: true, //Xが先手
+      ascend: true, //ソート
+      winner: null, //勝者
+      winnerPosition: null, //勝者の手
     };
   }
 
@@ -65,8 +77,9 @@ class Game extends React.Component {
     const history = this.state.history.slice(0, this.state.stepNumber + 1); //時間を巻き戻したら不要な未来の履歴を消す
     const current = history[history.length - 1];
     const squares = current.squares.slice();
+
     // 決着がついていたらreturn
-    if (calculateWinner(squares) || squares[i]) {
+    if (this.state.winner || squares[i]) {
       return;
     }
     squares[i] = this.state.xIsNext ? 'X' : 'O';
@@ -77,6 +90,13 @@ class Game extends React.Component {
       stepNumber: history.length,
       xIsNext: !this.state.xIsNext, //次のプレーヤーへ
     });
+
+    // 勝者が決まったら記録
+    const winnerInfo = calculateWinner(squares);
+    this.setState({
+      winner: winnerInfo[0],
+      winnerPosition: winnerInfo[1],
+    });
   }
 
   jumpTo(step) {
@@ -84,12 +104,27 @@ class Game extends React.Component {
       stepNumber: step,
       xIsNext: (step % 2) === 0,
     })
+
+    // ステップを移動したら勝者情報も更新する
+    const history = this.state.history;
+    const current = history[this.state.stepNumber]; //現在のステップを表示する
+    const winnerInfo = calculateWinner(current.squares);
+    this.setState({
+      winner: winnerInfo[0],
+      winnerPosition: winnerInfo[1],
+    })
+  }
+
+  // 履歴 降順昇順
+  sortHistory() {
+    this.setState({
+      ascend: !this.state.ascend,
+    })
   }
 
   render() {
     const history = this.state.history;
     const current = history[this.state.stepNumber]; //現在のステップを表示する
-    const winner = calculateWinner(current.squares); //勝者を判定
 
     const moves = history.map((step, move) => {
       const desc = move ?
@@ -101,7 +136,7 @@ class Game extends React.Component {
       if (move > 0) {
         step.squares.forEach(function(value, index) {
           if (value !== history[move-1].squares[index]) {
-            position = `[${index}]`;
+            position = ` - [${index}]`;
             return;
           }
         })
@@ -112,32 +147,49 @@ class Game extends React.Component {
         'is-current' :
         null;
 
+      // 時計アイコンつける
+      const iconButton = move ?
+        null :
+        <FontAwesomeIcon icon={faClock} />;
+
       return (
         <li key={move} className={currentStep}>
-          <button onClick={() => this.jumpTo(move)}>{desc}<FontAwesomeIcon icon={faClock} /></button>
+          <button onClick={() => this.jumpTo(move)}>{desc}{iconButton}</button>
           <span className="position">{position}</span>
         </li>
       );
     });
 
+    // 手番表示
     let status;
-    if (winner) {
-      status = 'Winner: ' + winner;
+    if (this.state.winner) {
+      status = 'Winner: ' + this.state.winner;
     } else {
       status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
     }
+
+    // 昇順降順
+    const sortText = this.state.ascend ?
+      '▲Ascending' :
+      '▼Descending';
+
+    if(!this.state.ascend) moves.reverse();
 
     return (
       <div className="game">
         <div className="game-board">
           <Board
             squares={current.squares}
+            winnerPosition={this.state.winnerPosition}
             onClick={(i) => this.handleClick(i)}
           />
         </div>
         <div className="game-info">
           <div>{status}</div>
-          <ol className="list-moves">{moves}</ol>
+          <div className="game-history">
+            <button onClick={() => this.sortHistory()} className="btn-sort">{sortText}</button>
+            <ol className="list-moves">{moves}</ol>
+          </div>
         </div>
       </div>
     );
@@ -166,8 +218,8 @@ function calculateWinner(squares) {
   for (let i = 0; i < lines.length; i++) {
     const [a, b, c] = lines[i];
     if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return squares[a];
+      return [squares[a], lines[i]];
     }
   }
-  return null;
+  return [null, null];
 }
