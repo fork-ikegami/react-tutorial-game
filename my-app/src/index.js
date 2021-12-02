@@ -6,7 +6,7 @@ import './index.css';
 
 // 次はこちら
 // https://ja.reactjs.org/tutorial/tutorial.html#completing-the-game
-// jumpToでステップ移動したあと、情報が更新されるタイミングが遅いので見直す
+// どちらも勝利しなかった場合、結果が引き分けになったというメッセージを表示する。
 
 // 関数コンポーネント
 function Square(props) {
@@ -20,6 +20,7 @@ function Square(props) {
 
 class Board extends React.Component {
   renderSquare(i) {
+    // 勝者がいる場合、決め手のマスにクラス付与
     let isWinnerSquare = null;
     if (this.props.winnerPosition !== null) {
       this.props.winnerPosition.forEach((e) => {
@@ -73,7 +74,13 @@ class Game extends React.Component {
     };
   }
 
+  /**
+   * 
+   * @param {Number} i 押されたマス目の位置
+   * @returns 
+   */
   handleClick(i) {
+    console.log(i);
     const history = this.state.history.slice(0, this.state.stepNumber + 1); //時間を巻き戻したら不要な未来の履歴を消す
     const current = history[history.length - 1];
     const squares = current.squares.slice();
@@ -82,6 +89,7 @@ class Game extends React.Component {
     if (this.state.winner || squares[i]) {
       return;
     }
+
     squares[i] = this.state.xIsNext ? 'X' : 'O';
     this.setState({
       history: history.concat([{
@@ -91,7 +99,11 @@ class Game extends React.Component {
       xIsNext: !this.state.xIsNext, //次のプレーヤーへ
     });
 
-    // 勝者が決まったら記録
+    this.setWinner(squares);
+  }
+
+  // 勝者記録
+  setWinner(squares) {
     const winnerInfo = calculateWinner(squares);
     this.setState({
       winner: winnerInfo[0],
@@ -100,19 +112,18 @@ class Game extends React.Component {
   }
 
   jumpTo(step) {
+    // 任意のステップに移動
     this.setState({
       stepNumber: step,
       xIsNext: (step % 2) === 0,
-    })
+      // winner: null,
+      // winnerPosition: null,
+    });
 
     // ステップを移動したら勝者情報も更新する
     const history = this.state.history;
-    const current = history[this.state.stepNumber]; //現在のステップを表示する
-    const winnerInfo = calculateWinner(current.squares);
-    this.setState({
-      winner: winnerInfo[0],
-      winnerPosition: winnerInfo[1],
-    })
+    const current = history[step];
+    this.setWinner(current.squares);
   }
 
   // 履歴 降順昇順
@@ -124,7 +135,7 @@ class Game extends React.Component {
 
   render() {
     const history = this.state.history;
-    const current = history[this.state.stepNumber]; //現在のステップを表示する
+    const current = history[this.state.stepNumber]; //現在のステップ
 
     const moves = history.map((step, move) => {
       const desc = move ?
