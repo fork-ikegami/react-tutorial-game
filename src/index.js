@@ -4,9 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faClock } from '@fortawesome/free-solid-svg-icons'
 import './index.css';
 
-// 次はこちら
 // https://ja.reactjs.org/tutorial/tutorial.html#completing-the-game
-// どちらも勝利しなかった場合、結果が引き分けになったというメッセージを表示する。
 
 // 関数コンポーネント
 function Square(props) {
@@ -80,7 +78,6 @@ class Game extends React.Component {
    * @returns 
    */
   handleClick(i) {
-    console.log(i);
     const history = this.state.history.slice(0, this.state.stepNumber + 1); //時間を巻き戻したら不要な未来の履歴を消す
     const current = history[history.length - 1];
     const squares = current.squares.slice();
@@ -116,8 +113,6 @@ class Game extends React.Component {
     this.setState({
       stepNumber: step,
       xIsNext: (step % 2) === 0,
-      // winner: null,
-      // winnerPosition: null,
     });
 
     // ステップを移動したら勝者情報も更新する
@@ -175,6 +170,8 @@ class Game extends React.Component {
     let status;
     if (this.state.winner) {
       status = 'Winner: ' + this.state.winner;
+    } else if (this.state.stepNumber === 9) {
+      status = 'DRAW';
     } else {
       status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
     }
